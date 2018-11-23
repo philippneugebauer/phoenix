@@ -1,3 +1,4 @@
+require IEx
 defmodule Phoenix.Digester do
   @digested_file_regex ~r/(-[a-fA-F\d]{32})/
   @manifest_version 1
@@ -160,8 +161,12 @@ defmodule Phoenix.Digester do
   end
 
   defp digest(file) do
-    name = Path.rootname(file.filename)
-    extension = Path.extname(file.filename)
+    extension_index =
+      file.filename
+      |> String.graphemes()
+      |> Enum.find_index(fn c -> c == "." end)
+    name = String.slice(file.filename, 0..(extension_index - 1))
+    extension = String.slice(file.filename, extension_index..String.length(file.filename))
     digest = Base.encode16(:erlang.md5(file.content), case: :lower)
     Map.merge(file, %{
       digested_filename: "#{name}-#{digest}#{extension}",
